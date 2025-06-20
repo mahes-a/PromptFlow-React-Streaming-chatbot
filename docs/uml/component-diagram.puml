@@ -1,0 +1,78 @@
+@startuml
+!theme plain
+title PromptFlow React Streaming Chatbot - Component Diagram
+
+package "Frontend Layer" {
+    [React Application] as React
+    [Chatbot Component] as Chatbot
+    [Fetch API] as FetchAPI
+}
+
+package "Backend Layer" {
+    [ASP.NET Core API] as WebAPI
+    [ChatController] as Controller
+    [HttpClient] as HttpClient
+}
+
+package "External Services" {
+    [PromptFlow Service] as PromptFlow
+    [Azure OpenAI] as OpenAI
+}
+
+package "Data Models" {
+    [ChatRequest] as Request
+    [ChatHistory] as History
+    [ChatInput] as Input
+    [ChatOutput] as Output
+}
+
+' Component relationships
+React --> Chatbot : contains
+Chatbot --> FetchAPI : uses
+FetchAPI --> WebAPI : HTTP POST\n/api/Chat
+
+WebAPI --> Controller : routes to
+Controller --> HttpClient : uses
+HttpClient --> PromptFlow : forwards request
+
+PromptFlow --> OpenAI : processes via
+
+Controller --> Request : receives
+Request --> History : contains
+History --> Input : has
+History --> Output : has
+
+' Interfaces
+interface "REST API" as REST
+interface "Server-Sent Events" as SSE
+interface "Stream Processing" as Stream
+
+FetchAPI --> REST
+REST --> Controller
+Controller --> SSE
+SSE --> FetchAPI
+
+Controller --> Stream
+Stream --> HttpClient
+
+note right of PromptFlow
+  External AI service that
+  processes chat requests
+  and returns streaming responses
+end note
+
+note right of Controller
+  Proxy component that:
+  - Forwards requests to PromptFlow
+  - Handles authentication
+  - Streams responses back
+end note
+
+note right of Chatbot
+  React component that:
+  - Sends chat requests
+  - Handles streaming responses
+  - Updates UI in real-time
+end note
+
+@enduml

@@ -1,0 +1,64 @@
+@startuml
+!theme plain
+title PromptFlow React Streaming Chatbot - Class Diagram
+
+package "Backend Models" {
+    class ChatRequest {
+        +string chat_input
+        +ChatHistory[] chat_history
+    }
+    
+    class ChatHistory {
+        +ChatInput inputs
+        +ChatOutput outputs
+    }
+    
+    class ChatInput {
+        +string question
+    }
+    
+    class ChatOutput {
+        +string answer
+    }
+    
+    class ChatController {
+        +Post(ChatRequest request) : Task
+        -GetStreamChunks(StreamReader reader) : IAsyncEnumerable<string>
+    }
+}
+
+package "Frontend Components" {
+    class Chatbot {
+        -chatOutput: string
+        -abortRef: AbortController
+        +useEffect(): void
+        -fetchData(): Promise<void>
+        +render(): JSX.Element
+    }
+}
+
+package "External Services" {
+    class PromptFlowService {
+        +score(request): Stream<Response>
+    }
+}
+
+' Relationships
+ChatRequest ||--o{ ChatHistory : contains
+ChatHistory ||--|| ChatInput : has
+ChatHistory ||--|| ChatOutput : has
+ChatController ..> ChatRequest : uses
+ChatController --> PromptFlowService : forwards to
+Chatbot --> ChatController : HTTP POST /api/Chat
+
+note right of ChatController
+  Acts as a streaming proxy between
+  React frontend and PromptFlow service
+end note
+
+note right of Chatbot
+  React component that handles
+  streaming chat responses
+end note
+
+@enduml

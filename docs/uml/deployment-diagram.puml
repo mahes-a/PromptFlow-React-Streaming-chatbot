@@ -1,0 +1,72 @@
+@startuml
+!theme plain
+title PromptFlow React Streaming Chatbot - Deployment Diagram
+
+node "Client Browser" {
+    [React Application] as ReactApp
+    [Chatbot Component] as ChatbotComp
+}
+
+node "Web Server" {
+    [ASP.NET Core API] as WebAPI
+    [ChatController] as Controller
+}
+
+cloud "Azure Cloud" {
+    node "PromptFlow Service" {
+        [PromptFlow Runtime] as PromptFlow
+    }
+    
+    node "Azure OpenAI Service" {
+        [GPT Model] as GPT
+    }
+}
+
+database "Configuration" {
+    [API Keys] as Keys
+    [Endpoints] as Endpoints
+}
+
+' Deployment relationships
+ReactApp --> ChatbotComp : contains
+ChatbotComp --> WebAPI : HTTPS\n(text/event-stream)
+
+WebAPI --> Controller : routes
+Controller --> PromptFlow : HTTPS\n(Bearer token)
+
+PromptFlow --> GPT : API calls
+
+Controller --> Keys : reads
+Controller --> Endpoints : uses
+
+' Network protocols
+ChatbotComp --> WebAPI : POST /api/Chat
+WebAPI --> ChatbotComp : SSE Stream
+
+Controller --> PromptFlow : POST /score
+PromptFlow --> Controller : SSE Stream
+
+note right of ReactApp
+  Runs in user's browser
+  Handles UI and streaming
+end note
+
+note right of WebAPI
+  Backend proxy server
+  Handles authentication
+  and request forwarding
+end note
+
+note right of PromptFlow
+  Hosted AI service
+  Processes chat requests
+  Returns streaming responses
+end note
+
+note bottom of Keys
+  Requires configuration:
+  - API Key for PromptFlow
+  - PromptFlow service URI
+end note
+
+@enduml

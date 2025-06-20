@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+title PromptFlow React Streaming Chatbot - Sequence Diagram
+
+actor User
+participant "Chatbot\n(React)" as Frontend
+participant "ChatController\n(ASP.NET Core)" as Backend
+participant "PromptFlow\nService" as External
+
+User -> Frontend: Load chatbot component
+activate Frontend
+
+Frontend -> Frontend: useEffect() triggered
+Frontend -> Frontend: Initialize AbortController
+
+Frontend -> Backend: POST /api/Chat\n{chat_input, chat_history}
+activate Backend
+
+Backend -> Backend: Extract API key and URI
+Backend -> Backend: Prepare request body
+Backend -> Backend: Set authorization headers
+
+Backend -> External: POST /score\nBearer token + request
+activate External
+
+External -> Backend: Stream response\n(Server-Sent Events)
+Backend -> Backend: GetStreamChunks()\nProcess each chunk
+
+loop For each streaming chunk
+    External -> Backend: data: {chunk}
+    Backend -> Backend: Parse JSON\nExtract chat_output
+    Backend -> Frontend: SSE: data: {parsed_content}\n\n
+    Frontend -> Frontend: Decode chunk
+    Frontend -> Frontend: Extract data after "data: "
+    Frontend -> Frontend: Append to fullText
+    Frontend -> Frontend: setChatOutput(fullText)
+    Frontend -> User: Update UI with new content
+end
+
+External -> Backend: Stream complete
+deactivate External
+
+Backend -> Frontend: Stream end
+deactivate Backend
+
+Frontend -> Frontend: Clean up resources
+deactivate Frontend
+
+note over Frontend, Backend
+  The backend acts as a streaming proxy,
+  forwarding requests to PromptFlow and
+  streaming responses back to React frontend
+end note
+
+note over User, Frontend
+  User sees real-time updates as
+  the AI response is being streamed
+end note
+
+@enduml

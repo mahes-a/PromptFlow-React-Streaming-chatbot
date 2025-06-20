@@ -1,0 +1,48 @@
+@startuml
+!theme plain
+title PromptFlow React Streaming Chatbot - Architecture Overview
+
+left to right direction
+
+rectangle "User Browser" as Browser {
+    [React App] as React
+    [Chatbot Component] as Chatbot
+}
+
+rectangle "Web Server" as Server {
+    [ASP.NET Core API] as API
+    [ChatController] as Controller
+}
+
+cloud "Azure Services" as Azure {
+    [PromptFlow Service] as PromptFlow
+    [Azure OpenAI] as OpenAI
+}
+
+' Data flow
+Browser --> Server : "1. POST /api/Chat\n{chat_input, chat_history}"
+Server --> Azure : "2. Forward request\nwith Bearer token"
+Azure --> Server : "3. Stream AI response\n(Server-Sent Events)"
+Server --> Browser : "4. Proxy stream\nto frontend"
+
+' Components within rectangles
+React --> Chatbot : contains
+API --> Controller : routes to
+PromptFlow --> OpenAI : uses
+
+note top of Browser
+  User interacts with React chatbot
+  Displays streaming responses in real-time
+end note
+
+note top of Server
+  Proxy server for authentication
+  Handles CORS and streaming
+end note
+
+note top of Azure
+  AI processing and response generation
+  Returns streaming text responses
+end note
+
+@enduml
